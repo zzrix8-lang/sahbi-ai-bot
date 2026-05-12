@@ -31,7 +31,8 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-model = genai.GenerativeModel("gemini-1.5-flash")
+# ✅ الموديل الجديد
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 # =========================
 # معلومات البوت
@@ -137,7 +138,12 @@ async def ai_response(update: Update, text: str):
         if not answer:
             answer = "❌ لم يتم الحصول على رد."
 
-        await update.message.reply_text(answer)
+        # تقسيم الرد إذا كان طويل
+        if len(answer) > 4000:
+            for i in range(0, len(answer), 4000):
+                await update.message.reply_text(answer[i:i+4000])
+        else:
+            await update.message.reply_text(answer)
 
     except Exception as e:
 
