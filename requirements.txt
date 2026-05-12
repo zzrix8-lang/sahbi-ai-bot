@@ -1,5 +1,3 @@
 python-telegram-bot==20.6
-google-generativeai
 yt-dlp
 ffmpeg-python
-httpx==0.25.2
