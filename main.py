@@ -1,7 +1,7 @@
 import os
-import openai
 import yt_dlp
 import asyncio
+import google.generativeai as genai
 
 from telegram import (
     Update,
@@ -20,9 +20,12 @@ from telegram.ext import (
 
 # إعداد التوكنات
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+# إعداد Gemini
+genai.configure(api_key=GEMINI_API_KEY)
+
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # معلومات البوت
 BOT_NAME = "Sahbi AI"
@@ -75,10 +78,12 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.message.reply_text(
             "🤖 أرسل أي سؤال وسأجيبك مباشرة."
         )
+
     elif query.data == "download":
         await query.message.reply_text(
             "📥 أرسل رابط TikTok أو Instagram أو YouTube."
         )
+
     elif query.data == "help":
         await query.message.reply_text(
             f"""
@@ -97,21 +102,17 @@ async def ai_response(update: Update, text: str):
     try:
         loading = await update.message.reply_text("🤖 جاري التفكير...")
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "أنت مساعد عربي ذكي ومختصر."},
-                {"role": "user", "content": text}
-            ]
+        response = model.generate_content(
+            f"أنت مساعد عربي ذكي ومختصر.\n\nالمستخدم: {text}"
         )
 
-        answer = response.choices[0].message.content
+        answer = response.text
 
         await loading.delete()
         await update.message.reply_text(answer)
 
     except Exception as e:
-        await update.message.reply_text(f"❌ خطأ: {str(e)}")
+        await update.message.reply_text(f"❌ خطأ:\n{str(e)}")
 
 
 async def download_video(update: Update, url: str):
@@ -130,8 +131,8 @@ async def download_video(update: Update, url: str):
 
         await asyncio.to_thread(download)
 
-        # البحث عن ملف الفيديو
         video_file = None
+
         for file in os.listdir():
             if file.endswith(".mp4"):
                 video_file = file
@@ -147,6 +148,7 @@ async def download_video(update: Update, url: str):
                 )
 
             os.remove(video_file)
+
         else:
             await update.message.reply_text("❌ لم يتم العثور على الفيديو.")
 
@@ -157,8 +159,14 @@ async def download_video(update: Update, url: str):
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
 
-    if any(keyword in text for keyword in ["tiktok.com", "instagram.com", "youtube.com", "youtu.be"]):
+    if any(keyword in text for keyword in [
+        "tiktok.com",
+        "instagram.com",
+        "youtube.com",
+        "youtu.be"
+    ]):
         await download_video(update, text)
+
     else:
         await ai_response(update, text)
 
@@ -191,6 +199,7 @@ def main():
     app.add_error_handler(error_handler)
 
     print("🔥 SAHBI AI BOT STARTED")
+
     app.run_polling()
 
 
