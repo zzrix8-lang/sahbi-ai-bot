@@ -1,7 +1,8 @@
 import os
 import yt_dlp
 import asyncio
-import google.generativeai as genai
+
+from google import genai
 
 from telegram import (
     Update,
@@ -18,21 +19,32 @@ from telegram.ext import (
     filters,
 )
 
-# إعداد التوكنات
+# =========================
+# التوكنات
+# =========================
+
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# إعداد Gemini
-genai.configure(api_key=GEMINI_API_KEY)
+# =========================
+# Gemini Client
+# =========================
 
-model = genai.GenerativeModel("gemini-1.5-flash")
+client = genai.Client(api_key=GEMINI_API_KEY)
 
+# =========================
 # معلومات البوت
+# =========================
+
 BOT_NAME = "Sahbi AI"
 DEVELOPER = "@n5w_n"
 
+# =========================
+# /start
+# =========================
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     keyboard = [
         [InlineKeyboardButton("🤖 الذكاء الاصطناعي", callback_data="ai")],
         [InlineKeyboardButton("📥 تحميل فيديو", callback_data="download")],
@@ -69,22 +81,29 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+# =========================
+# الأزرار
+# =========================
 
 async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     query = update.callback_query
     await query.answer()
 
     if query.data == "ai":
+
         await query.message.reply_text(
             "🤖 أرسل أي سؤال وسأجيبك مباشرة."
         )
 
     elif query.data == "download":
+
         await query.message.reply_text(
             "📥 أرسل رابط TikTok أو Instagram أو YouTube."
         )
 
     elif query.data == "help":
+
         await query.message.reply_text(
             f"""
 ℹ️ طريقة الاستخدام:
@@ -97,27 +116,46 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
         )
 
+# =========================
+# الذكاء الاصطناعي
+# =========================
 
 async def ai_response(update: Update, text: str):
-    try:
-        loading = await update.message.reply_text("🤖 جاري التفكير...")
 
-        response = model.generate_content(
-            f"أنت مساعد عربي ذكي ومختصر.\n\nالمستخدم: {text}"
+    try:
+
+        loading = await update.message.reply_text(
+            "🤖 جاري التفكير..."
+        )
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=text
         )
 
         answer = response.text
 
         await loading.delete()
+
         await update.message.reply_text(answer)
 
     except Exception as e:
-        await update.message.reply_text(f"❌ خطأ:\n{str(e)}")
 
+        await update.message.reply_text(
+            f"❌ خطأ:\n{str(e)}"
+        )
+
+# =========================
+# تحميل الفيديو
+# =========================
 
 async def download_video(update: Update, url: str):
+
     try:
-        msg = await update.message.reply_text("⏳ جاري تحميل الفيديو...")
+
+        msg = await update.message.reply_text(
+            "⏳ جاري تحميل الفيديو..."
+        )
 
         ydl_opts = {
             "format": "mp4",
@@ -139,9 +177,11 @@ async def download_video(update: Update, url: str):
                 break
 
         if video_file:
+
             await msg.delete()
 
             with open(video_file, "rb") as video:
+
                 await update.message.reply_video(
                     video=video,
                     caption=f"✅ تم التحميل بواسطة {BOT_NAME}\n\n👨‍💻 المطور:\n{DEVELOPER}"
@@ -150,13 +190,23 @@ async def download_video(update: Update, url: str):
             os.remove(video_file)
 
         else:
-            await update.message.reply_text("❌ لم يتم العثور على الفيديو.")
+
+            await update.message.reply_text(
+                "❌ لم يتم العثور على الفيديو."
+            )
 
     except Exception as e:
-        await update.message.reply_text(f"❌ خطأ أثناء التحميل:\n{str(e)}")
 
+        await update.message.reply_text(
+            f"❌ خطأ أثناء التحميل:\n{str(e)}"
+        )
+
+# =========================
+# استقبال الرسائل
+# =========================
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     text = update.message.text
 
     if any(keyword in text for keyword in [
@@ -165,13 +215,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "youtube.com",
         "youtu.be"
     ]):
+
         await download_video(update, text)
 
     else:
+
         await ai_response(update, text)
 
+# =========================
+# /help
+# =========================
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     await update.message.reply_text(
         f"""
 🔥 {BOT_NAME}
@@ -184,24 +240,41 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
     )
 
+# =========================
+# الأخطاء
+# =========================
 
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+
     print(f"ERROR: {context.error}")
 
+# =========================
+# تشغيل البوت
+# =========================
 
 def main():
+
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("help", help_command))
+
     app.add_handler(CallbackQueryHandler(buttons))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            handle_message
+        )
+    )
+
     app.add_error_handler(error_handler)
 
     print("🔥 SAHBI AI BOT STARTED")
 
     app.run_polling()
 
+# =========================
 
 if __name__ == "__main__":
     main()
