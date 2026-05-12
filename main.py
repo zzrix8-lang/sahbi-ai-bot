@@ -68,7 +68,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 ✅ ذكاء اصطناعي
 ✅ تحميل فيديو
-✅ أدوات يومية
 
 ━━━━━━━━━━━━━━━
 
@@ -137,6 +136,9 @@ async def ai_response(update: Update, text: str):
 
         await loading.delete()
 
+        if not answer:
+            answer = "❌ لم يتم الحصول على رد."
+
         await update.message.reply_text(answer)
 
     except Exception as e:
@@ -160,7 +162,8 @@ async def download_video(update: Update, url: str):
         ydl_opts = {
             "format": "mp4",
             "outtmpl": "video.%(ext)s",
-            "quiet": True
+            "quiet": True,
+            "noplaylist": True
         }
 
         def download():
@@ -184,7 +187,7 @@ async def download_video(update: Update, url: str):
 
                 await update.message.reply_video(
                     video=video,
-                    caption=f"✅ تم التحميل بواسطة {BOT_NAME}\n\n👨‍💻 المطور:\n{DEVELOPER}"
+                    caption=f"✅ تم التحميل بواسطة {BOT_NAME}"
                 )
 
             os.remove(video_file)
@@ -206,6 +209,9 @@ async def download_video(update: Update, url: str):
 # =========================
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    if not update.message or not update.message.text:
+        return
 
     text = update.message.text
 
@@ -254,6 +260,14 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
 
+    if not BOT_TOKEN:
+        print("❌ BOT_TOKEN غير موجود")
+        return
+
+    if not GEMINI_API_KEY:
+        print("❌ GEMINI_API_KEY غير موجود")
+        return
+
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
@@ -272,7 +286,7 @@ def main():
 
     print("🔥 SAHBI AI BOT STARTED")
 
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True)
 
 # =========================
 
