@@ -1,4 +1,2 @@
 python-telegram-bot==20.7
 openai==0.28
-yt-dlp
-ffmpeg-python
