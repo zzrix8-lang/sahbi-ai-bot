@@ -20,10 +20,11 @@ from telegram.ext import (
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-openai.api_key = OPENAI_API_KEY
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 BOT_NAME = "Sahbi AI"
 DEVELOPER = "@n5w_n"
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
@@ -63,6 +64,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
+
 async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
@@ -91,6 +93,7 @@ async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
         )
 
+
 async def ai_response(update: Update, text: str):
 
     try:
@@ -99,8 +102,8 @@ async def ai_response(update: Update, text: str):
             "🤖 جاري التفكير..."
         )
 
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {
                     "role": "system",
@@ -113,7 +116,7 @@ async def ai_response(update: Update, text: str):
             ]
         )
 
-        answer = response["choices"][0]["message"]["content"]
+        answer = response.choices[0].message.content
 
         await loading.delete()
 
@@ -124,6 +127,7 @@ async def ai_response(update: Update, text: str):
         await update.message.reply_text(
             f"❌ خطأ:\n{e}"
         )
+
 
 async def download_video(update: Update, url: str):
 
@@ -178,6 +182,7 @@ async def download_video(update: Update, url: str):
             f"❌ خطأ أثناء التحميل:\n{e}"
         )
 
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = update.message.text
@@ -195,6 +200,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await ai_response(update, text)
 
+
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
@@ -209,9 +215,11 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 """
     )
 
+
 async def error_handler(update, context):
 
     print(f"ERROR: {context.error}")
+
 
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 
