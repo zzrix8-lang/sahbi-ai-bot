@@ -1,7 +1,8 @@
 import os
 import yt_dlp
+import random
 import asyncio
-import google.generativeai as genai
+from datetime import datetime
 
 from telegram import (
     Update,
@@ -18,58 +19,64 @@ from telegram.ext import (
     filters,
 )
 
-# =========================
-# التوكنات
-# =========================
+# ====================================
+# معلومات البوت
+# ====================================
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# =========================
-# إعداد Gemini
-# =========================
-
-genai.configure(api_key=GEMINI_API_KEY)
-
-# ✅ الموديل الجديد
-model = genai.GenerativeModel("gemini-2.0-flash")
-
-# =========================
-# معلومات البوت
-# =========================
-
-BOT_NAME = "Sahbi AI"
+BOT_NAME = "SAHBI AI"
 DEVELOPER = "@n5w_n"
 
-# =========================
-# /start
-# =========================
+CHANNEL_URL = "https://t.me/awes_anshed"
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# ====================================
+# القائمة الرئيسية
+# ====================================
+
+def main_menu():
 
     keyboard = [
-        [InlineKeyboardButton("🤖 الذكاء الاصطناعي", callback_data="ai")],
-        [InlineKeyboardButton("📥 تحميل فيديو", callback_data="download")],
-        [InlineKeyboardButton("ℹ️ المساعدة", callback_data="help")],
+
+        [InlineKeyboardButton("📥 قسم التحميل", callback_data="download")],
+
+        [InlineKeyboardButton("📁 قسم الملفات", callback_data="files")],
+
+        [InlineKeyboardButton("📚 قسم الدراسة", callback_data="study")],
+
+        [InlineKeyboardButton("🛠️ قسم الأدوات", callback_data="tools")],
+
+        [InlineKeyboardButton("🎮 قسم الترفيه", callback_data="fun")],
+
+        [InlineKeyboardButton("🖨️ صانع المستندات", callback_data="docs")],
+
         [
             InlineKeyboardButton(
-                "👨‍💻 المطور",
-                url=f"https://t.me/{DEVELOPER.replace('@', '')}"
+                "📢 اشترك بالقناة",
+                url=CHANNEL_URL
             )
         ]
     ]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(keyboard)
+
+# ====================================
+# START
+# ====================================
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = f"""
 🔥 أهلاً بك في {BOT_NAME}
 
-مساعدك العربي الذكي 🚀
-
 ━━━━━━━━━━━━━━━
 
-✅ ذكاء اصطناعي
-✅ تحميل فيديو
+📥 تحميل فيديوهات
+📁 أدوات ملفات
+📚 أدوات دراسة
+🛠️ أدوات يومية
+🎮 ترفيه وألعاب
+🖨️ إنشاء مستندات
 
 ━━━━━━━━━━━━━━━
 
@@ -79,81 +86,145 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await update.message.reply_text(
         text=text,
-        reply_markup=reply_markup
+        reply_markup=main_menu()
     )
 
-# =========================
+# ====================================
 # الأزرار
-# =========================
+# ====================================
 
 async def buttons(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     query = update.callback_query
+
     await query.answer()
 
-    if query.data == "ai":
+    # ====================================
+    # التحميل
+    # ====================================
 
-        await query.message.reply_text(
-            "🤖 أرسل أي سؤال وسأجيبك مباشرة."
-        )
+    if query.data == "download":
 
-    elif query.data == "download":
+        text = """
+📥 قسم التحميل
 
-        await query.message.reply_text(
-            "📥 أرسل رابط TikTok أو Instagram أو YouTube."
-        )
+✅ TikTok
+✅ Instagram
+✅ YouTube
+✅ Facebook
+✅ Twitter / X
 
-    elif query.data == "help":
-
-        await query.message.reply_text(
-            f"""
-ℹ️ طريقة الاستخدام:
-
-• أرسل أي سؤال للذكاء الاصطناعي
-• أو أرسل رابط فيديو للتحميل
-
-👨‍💻 المطور:
-{DEVELOPER}
+📌 أرسل الرابط مباشرة للتحميل.
 """
-        )
 
-# =========================
-# الذكاء الاصطناعي
-# =========================
+        await query.message.reply_text(text)
 
-async def ai_response(update: Update, text: str):
+    # ====================================
+    # الملفات
+    # ====================================
 
-    try:
+    elif query.data == "files":
 
-        loading = await update.message.reply_text(
-            "🤖 جاري التفكير..."
-        )
+        text = """
+📁 قسم الملفات
 
-        response = model.generate_content(text)
+📄 PDF ↔ Word
+🖼️ PNG ↔ JPG
+📦 فك ضغط ZIP
+🗜️ ضغط ملفات
+📚 دمج PDF
 
-        answer = response.text
+📌 أرسل الملف المطلوب.
+"""
 
-        await loading.delete()
+        await query.message.reply_text(text)
 
-        if not answer:
-            answer = "❌ لم يتم الحصول على رد."
+    # ====================================
+    # الدراسة
+    # ====================================
 
-        # تقسيم الرد إذا كان طويل
-        if len(answer) > 4000:
-            for i in range(0, len(answer), 4000):
-                await update.message.reply_text(answer[i:i+4000])
-        else:
-            await update.message.reply_text(answer)
+    elif query.data == "study":
 
-    except Exception as e:
+        text = """
+📚 قسم الدراسة
 
-        await update.message.reply_text(
-            f"❌ خطأ:\n{str(e)}"
-        )
+📸 حل أسئلة
+📝 تلخيص دروس
+📖 ترجمة
+🧮 حاسبة
+🎤 صوت → نص
+🔊 نص → صوت
+📅 خطة دراسة
+🧠 اختبارات قصيرة
+"""
 
-# =========================
+        await query.message.reply_text(text)
+
+    # ====================================
+    # الأدوات
+    # ====================================
+
+    elif query.data == "tools":
+
+        text = """
+🛠️ قسم الأدوات
+
+🌦️ الطقس
+💱 تحويل العملات
+🔗 اختصار روابط
+🔐 توليد كلمات سر
+📅 التاريخ الهجري
+🧾 QR Code
+
+📌 أوامر:
+- باسورد
+- وقت
+- نكتة
+"""
+
+        await query.message.reply_text(text)
+
+    # ====================================
+    # الترفيه
+    # ====================================
+
+    elif query.data == "fun":
+
+        text = """
+🎮 قسم الترفيه
+
+😂 نكت
+🎲 ألعاب
+🧠 ألغاز
+🪙 قرعة
+🎁 مكافآت
+"""
+
+        await query.message.reply_text(text)
+
+    # ====================================
+    # المستندات
+    # ====================================
+
+    elif query.data == "docs":
+
+        text = """
+🖨️ صانع المستندات
+
+📅 جدول حصص
+📝 ورقة امتحان
+📊 كشف علامات
+📋 حضور وغياب
+📄 أوراق واجبات
+
+📌 أرسل النص المطلوب.
+"""
+
+        await query.message.reply_text(text)
+
+# ====================================
 # تحميل الفيديو
-# =========================
+# ====================================
 
 async def download_video(update: Update, url: str):
 
@@ -179,7 +250,9 @@ async def download_video(update: Update, url: str):
         video_file = None
 
         for file in os.listdir():
+
             if file.endswith(".mp4"):
+
                 video_file = file
                 break
 
@@ -191,7 +264,15 @@ async def download_video(update: Update, url: str):
 
                 await update.message.reply_video(
                     video=video,
-                    caption=f"✅ تم التحميل بواسطة {BOT_NAME}"
+                    caption=f"""
+✅ تم التحميل بنجاح
+
+👨‍💻 المطور:
+{DEVELOPER}
+
+📢 القناة:
+{CHANNEL_URL}
+"""
                 )
 
             os.remove(video_file)
@@ -208,76 +289,194 @@ async def download_video(update: Update, url: str):
             f"❌ خطأ أثناء التحميل:\n{str(e)}"
         )
 
-# =========================
+# ====================================
+# الأدوات
+# ====================================
+
+async def tools_system(update: Update, text: str):
+
+    # ====================================
+    # باسورد
+    # ====================================
+
+    if text.lower() == "باسورد":
+
+        password = ''.join(
+            random.choice(
+                "abcdefghijklmnopqrstuvwxyz123456789"
+            ) for _ in range(12)
+        )
+
+        await update.message.reply_text(
+            f"🔐 كلمة السر:\n{password}"
+        )
+
+    # ====================================
+    # نكتة
+    # ====================================
+
+    elif text.lower() == "نكتة":
+
+        jokes = [
+
+            "😂 المدرس: أين الواجب؟ الطالب: في مرحلة انتقالية.",
+
+            "😂 طالب قال للمعلم: القلم ما يكتب. قاله: جرب تدرسه.",
+
+            "😂 واحد فتح الثلاجة شاف اللبن زعلان قاله: منتهي الصلاحية."
+        ]
+
+        await update.message.reply_text(
+            random.choice(jokes)
+        )
+
+    # ====================================
+    # الوقت
+    # ====================================
+
+    elif text.lower() == "وقت":
+
+        now = datetime.now().strftime("%H:%M:%S")
+
+        await update.message.reply_text(
+            f"🕓 الوقت الآن:\n{now}"
+        )
+
+    # ====================================
+    # قرعة
+    # ====================================
+
+    elif text.lower() == "قرعة":
+
+        result = random.choice([
+            "✅ نعم",
+            "❌ لا"
+        ])
+
+        await update.message.reply_text(
+            f"🪙 النتيجة:\n{result}"
+        )
+
+    # ====================================
+    # رسالة افتراضية
+    # ====================================
+
+    else:
+
+        await update.message.reply_text(
+            """
+❌ الأمر غير معروف.
+
+📌 جرّب:
+- نكتة
+- باسورد
+- وقت
+- قرعة
+"""
+        )
+
+# ====================================
 # استقبال الرسائل
-# =========================
+# ====================================
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    if not update.message or not update.message.text:
+    if not update.message:
+        return
+
+    if not update.message.text:
         return
 
     text = update.message.text
 
+    # ====================================
+    # روابط تحميل
+    # ====================================
+
     if any(keyword in text for keyword in [
+
         "tiktok.com",
         "instagram.com",
         "youtube.com",
-        "youtu.be"
+        "youtu.be",
+        "facebook.com",
+        "twitter.com",
+        "x.com"
+
     ]):
 
         await download_video(update, text)
 
     else:
 
-        await ai_response(update, text)
+        await tools_system(update, text)
 
-# =========================
-# /help
-# =========================
+# ====================================
+# HELP
+# ====================================
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    await update.message.reply_text(
-        f"""
-🔥 {BOT_NAME}
+    text = f"""
+📌 أوامر البوت
 
-🤖 ذكاء اصطناعي
-📥 تحميل فيديو
+/start - تشغيل البوت
+/help - المساعدة
+
+━━━━━━━━━━━━━━━
+
+📥 أرسل رابط فيديو للتحميل
+
+🛠️ أوامر مفيدة:
+- نكتة
+- وقت
+- باسورد
+- قرعة
+
+━━━━━━━━━━━━━━━
 
 👨‍💻 المطور:
 {DEVELOPER}
 """
-    )
 
-# =========================
+    await update.message.reply_text(text)
+
+# ====================================
 # الأخطاء
-# =========================
+# ====================================
 
-async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
+async def error_handler(update, context):
 
     print(f"ERROR: {context.error}")
 
-# =========================
-# تشغيل البوت
-# =========================
+# ====================================
+# MAIN
+# ====================================
 
 def main():
 
     if not BOT_TOKEN:
-        print("❌ BOT_TOKEN غير موجود")
-        return
 
-    if not GEMINI_API_KEY:
-        print("❌ GEMINI_API_KEY غير موجود")
+        print("❌ BOT_TOKEN غير موجود")
         return
 
     app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("help", help_command))
+    # ====================================
+    # HANDLERS
+    # ====================================
 
-    app.add_handler(CallbackQueryHandler(buttons))
+    app.add_handler(
+        CommandHandler("start", start)
+    )
+
+    app.add_handler(
+        CommandHandler("help", help_command)
+    )
+
+    app.add_handler(
+        CallbackQueryHandler(buttons)
+    )
 
     app.add_handler(
         MessageHandler(
@@ -292,7 +491,7 @@ def main():
 
     app.run_polling(drop_pending_updates=True)
 
-# =========================
+# ====================================
 
 if __name__ == "__main__":
     main()
