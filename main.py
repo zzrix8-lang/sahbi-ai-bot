@@ -1,8 +1,7 @@
 import os
 import yt_dlp
 import asyncio
-
-from google import genai
+import google.generativeai as genai
 
 from telegram import (
     Update,
@@ -27,10 +26,12 @@ BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # =========================
-# Gemini Client
+# إعداد Gemini
 # =========================
 
-client = genai.Client(api_key=GEMINI_API_KEY)
+genai.configure(api_key=GEMINI_API_KEY)
+
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 # =========================
 # معلومات البوت
@@ -127,10 +128,7 @@ async def ai_response(update: Update, text: str):
             "🤖 جاري التفكير..."
         )
 
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=text
-        )
+        response = model.generate_content(text)
 
         answer = response.text
 
