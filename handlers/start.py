@@ -1,31 +1,30 @@
-from telegram import ReplyKeyboardMarkup
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup
+)
 
+from telegram.ext import ContextTypes
+
+BOT_NAME = "SAHBI AI"
 DEVELOPER = "@n5w_n"
 
-async def start(update, context):
+CHANNEL_URL = "https://t.me/awes_anshed"
 
-    keyboard = [
-        ["📥 قسم التحميل"],
-        ["📁 قسم الملفات"],
-        ["📚 قسم الدراسة"],
-        ["🛠️ قسم الأدوات"],
-        ["🎮 قسم الترفيه"],
-        ["🖨️ صانع المستندات"]
-    ]
+# =========================
+# START
+# =========================
 
-    reply_markup = ReplyKeyboardMarkup(
-        keyboard,
-        resize_keyboard=True
-    )
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     text = f"""
-🔥 أهلاً بك في SAHBI AI
+🔥 أهلاً بك في {BOT_NAME}
 
 ━━━━━━━━━━━━━━━
 
 📥 تحميل فيديوهات
 📁 أدوات ملفات
-📚 أدوات دراسة
+📚 أدوات دراسية
 🛠️ أدوات يومية
 🎮 ترفيه وألعاب
 🖨️ إنشاء مستندات
@@ -36,7 +35,62 @@ async def start(update, context):
 {DEVELOPER}
 """
 
+    keyboard = [
+
+        [
+            InlineKeyboardButton(
+                "📥 قسم التحميل",
+                callback_data="download_menu"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "📁 قسم الملفات",
+                callback_data="files_menu"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "📚 قسم الدراسة",
+                callback_data="study_menu"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "🛠️ قسم الأدوات",
+                callback_data="tools_menu"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "🎮 قسم الترفيه",
+                callback_data="fun_menu"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "🖨️ صانع المستندات",
+                callback_data="documents_menu"
+            )
+        ],
+
+        [
+            InlineKeyboardButton(
+                "📢 اشترك بالقناة",
+                url=CHANNEL_URL
+            )
+        ]
+
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+
     await update.message.reply_text(
-        text,
+        text=text,
         reply_markup=reply_markup
     )
